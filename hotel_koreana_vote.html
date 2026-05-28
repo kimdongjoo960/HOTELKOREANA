@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>호텔코리아나 칭찬 직원 투표</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: #F7F3EC; min-height: 100vh; }
+    .header { background: #1A1612; padding: 32px 24px 24px; text-align: center; }
+    .hotel-logo { font-family: 'Cormorant Garamond', serif; color: #B8975A; font-size: 26px; letter-spacing: 5px; font-weight: 600; display: block; }
+    .hotel-sub { color: #8A7A6A; font-size: 11px; letter-spacing: 4px; margin-top: 6px; display: block; }
+    .lang-bar { background: #252018; display: flex; justify-content: center; border-bottom: 1px solid #3A3020; }
+    .lang-btn { background: none; border: none; color: #8A7A6A; font-size: 13px; padding: 11px 18px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; letter-spacing: 1px; transition: color 0.2s; border-bottom: 2px solid transparent; }
+    .lang-btn.active { color: #B8975A; border-bottom: 2px solid #B8975A; }
+    .form-wrap { padding: 28px 24px 40px; max-width: 480px; margin: 0 auto; }
+    .gold-line { width: 40px; height: 1px; background: #B8975A; margin: 0 auto 22px; }
+    .form-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #1A1612; font-weight: 600; text-align: center; margin-bottom: 8px; }
+    .form-desc { font-size: 13px; color: #8A7A6A; text-align: center; margin-bottom: 28px; line-height: 1.8; }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 11px; color: #8A7A6A; letter-spacing: 1.5px; margin-bottom: 7px; font-weight: 500; }
+    .field select, .field input, .field textarea {
+      width: 100%; background: #FFF; border: 1px solid #DDD5C5; border-radius: 2px;
+      padding: 11px 13px; font-size: 15px; font-family: 'Noto Sans KR', sans-serif;
+      color: #1A1612; outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .field select:focus, .field input:focus, .field textarea:focus { border-color: #B8975A; }
+    .field textarea { height: 100px; resize: none; line-height: 1.7; }
+    .error-msg { font-size: 11px; color: #c0392b; margin-top: 5px; display: none; }
+    .required { color: #B8975A; }
+    .divider { border: none; border-top: 1px solid #DDD5C5; margin: 22px 0; }
+    .submit-btn {
+      width: 100%; background: #1A1612; color: #B8975A; border: none;
+      padding: 16px; font-family: 'Cormorant Garamond', serif; font-size: 16px;
+      letter-spacing: 4px; cursor: pointer; transition: background 0.2s; border-radius: 2px;
+    }
+    .submit-btn:hover { background: #2C2620; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading-msg { font-size: 12px; color: #8A7A6A; text-align: center; margin-top: 14px; display: none; }
+    .thanks-screen { display: none; padding: 64px 24px; text-align: center; }
+    .thanks-icon { font-size: 44px; color: #B8975A; margin-bottom: 20px; }
+    .thanks-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; color: #1A1612; font-weight: 600; margin-bottom: 14px; }
+    .thanks-msg { font-size: 14px; color: #6A5A4A; line-height: 2; margin-bottom: 32px; }
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #c0392b; color: #fff; padding: 12px 24px; border-radius: 4px;
+      font-size: 13px; display: none; z-index: 999; white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <span class="hotel-logo">HOTEL KOREANA</span>
+    <span class="hotel-sub">SEOUL</span>
+  </div>
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('ko')">한국어</button>
+    <button class="lang-btn" onclick="setLang('en')">English</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+    <button class="lang-btn" onclick="setLang('ja')">日本語</button>
+  </div>
+
+  <div class="form-wrap" id="formSection">
+    <div style="height:28px"></div>
+    <div class="gold-line"></div>
+    <p class="form-title" id="txt-title">이달의 칭찬 직원</p>
+    <p class="form-desc" id="txt-desc">함께해 주신 직원분을 추천해 주세요.<br>여러분의 소중한 한 표가 큰 힘이 됩니다.</p>
+
+    <div class="field">
+      <label id="lbl-room">객실 번호 <span class="required">*</span></label>
+      <input type="number" id="roomNum" />
+      <div class="error-msg" id="err-room"></div>
+    </div>
+    <div class="field">
+      <label id="lbl-dept">부서 <span class="required">*</span></label>
+      <select id="dept"></select>
+      <div class="error-msg" id="err-dept"></div>
+    </div>
+    <div class="field">
+      <label id="lbl-name">직원 이름 <span class="required">*</span></label>
+      <input type="text" id="empName" />
+      <div class="error-msg" id="err-name"></div>
+    </div>
+    <div class="field">
+      <label id="lbl-reason">칭찬 이유 <span class="required">*</span></label>
+      <textarea id="reason"></textarea>
+      <div class="error-msg" id="err-reason"></div>
+    </div>
+
+    <hr class="divider" />
+    <button class="submit-btn" id="submitBtn" onclick="submitVote()">
+      <span id="txt-submit">투 표 하 기</span>
+    </button>
+    <p class="loading-msg" id="loadingMsg">저장 중입니다...</p>
+  </div>
+
+  <div class="thanks-screen" id="thanksSection">
+    <div class="gold-line" style="margin-bottom:36px"></div>
+    <div class="thanks-icon">✦</div>
+    <p class="thanks-title" id="txt-thanks-title">감사합니다</p>
+    <p class="thanks-msg" id="txt-thanks-msg">소중한 투표에 감사드립니다.<br>더 나은 호텔 코리아나가 되겠습니다.</p>
+    <span style="font-family:'Cormorant Garamond',serif;font-size:14px;color:#B8975A;letter-spacing:4px;">HOTEL KOREANA</span>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0OqV7oKoDhA-QQu0Qp598Q38TS5a8scQec7MMF6Mtc18bLjfxaAb_NzCd8ex-Es-yNg/exec';
+
+const i18n = {
+  ko: {
+    title: '이달의 칭찬 직원',
+    desc: '함께해 주신 직원분을 추천해 주세요.\n여러분의 소중한 한 표가 큰 힘이 됩니다.',
+    lbl_room: '객실 번호', lbl_dept: '부서', lbl_name: '직원 이름', lbl_reason: '칭찬 이유',
+    submit: '투 표 하 기', loading: '저장 중입니다...',
+    ph_room: '객실 번호를 입력해주세요', ph_name: '직원 이름을 입력해주세요',
+    ph_reason: '어떤 점이 특별히 좋으셨나요?', ph_dept: '부서를 선택해주세요',
+    err: '필수 항목입니다', err_network: '저장에 실패했습니다. 다시 시도해주세요.',
+    thanks_title: '감사합니다',
+    thanks_msg: '소중한 투표에 감사드립니다.\n더 나은 호텔 코리아나가 되겠습니다.',
+    depts: ['프론트 데스크', '하우스키핑', '식음료부 (F&B)', '컨시어지', '벨 & 도어', '시설관리', '기타']
+  },
+  en: {
+    title: 'Employee of the Month',
+    desc: 'Nominate a staff member who made\nyour stay memorable.',
+    lbl_room: 'Room Number', lbl_dept: 'Department', lbl_name: 'Staff Name', lbl_reason: 'Reason',
+    submit: 'S U B M I T', loading: 'Saving...',
+    ph_room: 'Enter your room number', ph_name: 'Enter staff name',
+    ph_reason: 'What made their service exceptional?', ph_dept: 'Select a department',
+    err: 'This field is required', err_network: 'Failed to save. Please try again.',
+    thanks_title: 'Thank You',
+    thanks_msg: 'Thank you for your valued vote.\nHotel Koreana will continue to improve for you.',
+    depts: ['Front Desk', 'Housekeeping', 'Food & Beverage', 'Concierge', 'Bell & Door', 'Engineering', 'Other']
+  },
+  zh: {
+    title: '本月最佳员工',
+    desc: '请为给您留下深刻印象的员工投票。\n您的每一票都意义重大。',
+    lbl_room: '房间号', lbl_dept: '部门', lbl_name: '员工姓名', lbl_reason: '推荐理由',
+    submit: '提 交 投 票', loading: '保存中...',
+    ph_room: '请输入房间号', ph_name: '请输入员工姓名',
+    ph_reason: '他/她的服务有什么特别之处？', ph_dept: '请选择部门',
+    err: '此项为必填项', err_network: '保存失败，请重试。',
+    thanks_title: '感谢您',
+    thanks_msg: '感谢您的宝贵投票。\n高丽亚纳酒店将继续为您提供更好的服务。',
+    depts: ['前台', '客房部', '餐饮部', '礼宾部', '行李员', '工程部', '其他']
+  },
+  ja: {
+    title: '今月の推薦スタッフ',
+    desc: '素晴らしいサービスを提供してくれた\nスタッフを推薦してください。',
+    lbl_room: '部屋番号', lbl_dept: '部署', lbl_name: 'スタッフ名', lbl_reason: '推薦理由',
+    submit: '投 票 す る', loading: '保存中...',
+    ph_room: '部屋番号を入力してください', ph_name: 'スタッフ名を入力してください',
+    ph_reason: 'どのような点が特別でしたか？', ph_dept: '部署を選択してください',
+    err: '必須項目です', err_network: '保存に失敗しました。もう一度お試しください。',
+    thanks_title: 'ありがとうございます',
+    thanks_msg: '大切なご投票をいただき、誠にありがとうございます。\nホテルコリアナはより良いサービスを目指してまいります。',
+    depts: ['フロントデスク', 'ハウスキーピング', '飲食部', 'コンシェルジュ', 'ベル・ドア', '施設管理', 'その他']
+  }
+};
+
+let lang = 'ko';
+
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach((b,i) => b.classList.toggle('active', ['ko','en','zh','ja'][i] === l));
+  const t = i18n[l];
+  document.getElementById('txt-title').textContent = t.title;
+  document.getElementById('txt-desc').innerHTML = t.desc.replace('\n','<br>');
+  document.getElementById('lbl-room').innerHTML = t.lbl_room + ' <span class="required">*</span>';
+  document.getElementById('lbl-dept').innerHTML = t.lbl_dept + ' <span class="required">*</span>';
+  document.getElementById('lbl-name').innerHTML = t.lbl_name + ' <span class="required">*</span>';
+  document.getElementById('lbl-reason').innerHTML = t.lbl_reason + ' <span class="required">*</span>';
+  document.getElementById('txt-submit').textContent = t.submit;
+  document.getElementById('loadingMsg').textContent = t.loading;
+  document.getElementById('roomNum').placeholder = t.ph_room;
+  document.getElementById('empName').placeholder = t.ph_name;
+  document.getElementById('reason').placeholder = t.ph_reason;
+  const dept = document.getElementById('dept');
+  dept.innerHTML = `<option value="">${t.ph_dept}</option>` + t.depts.map(d => `<option value="${d}">${d}</option>`).join('');
+  document.getElementById('txt-thanks-title').textContent = t.thanks_title;
+  document.getElementById('txt-thanks-msg').innerHTML = t.thanks_msg.replace('\n','<br>');
+  document.querySelectorAll('.error-msg').forEach(e => e.style.display = 'none');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
+}
+
+function submitVote() {
+  const t = i18n[lang];
+  const room = document.getElementById('roomNum').value.trim();
+  const dept = document.getElementById('dept').value;
+  const name = document.getElementById('empName').value.trim();
+  const reason = document.getElementById('reason').value.trim();
+
+  document.getElementById('err-room').textContent = t.err;
+  document.getElementById('err-dept').textContent = t.err;
+  document.getElementById('err-name').textContent = t.err;
+  document.getElementById('err-reason').textContent = t.err;
+  document.getElementById('err-room').style.display = room ? 'none' : 'block';
+  document.getElementById('err-dept').style.display = dept ? 'none' : 'block';
+  document.getElementById('err-name').style.display = name ? 'none' : 'block';
+  document.getElementById('err-reason').style.display = reason ? 'none' : 'block';
+  if (!room || !dept || !name || !reason) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('loadingMsg').style.display = 'block';
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ language: lang, room, department: dept, name, reason })
+  })
+  .then(() => {
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('thanksSection').style.display = 'block';
+  })
+  .catch(() => {
+    btn.disabled = false;
+    document.getElementById('loadingMsg').style.display = 'none';
+    showToast(t.err_network);
+  });
+}
+
+setLang('ko');
+</script>
+</body>
+</html>
